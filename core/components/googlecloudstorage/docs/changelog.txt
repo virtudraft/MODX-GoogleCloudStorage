@@ -1,0 +1,5 @@
+Changelog for GoogleCloudStorage
+
+GoogleCloudStorage 1.0.0-beta1 (January 19, 2015)
+====================================
++ Initial commit
