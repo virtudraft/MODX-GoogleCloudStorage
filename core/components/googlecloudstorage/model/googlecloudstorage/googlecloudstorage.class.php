@@ -147,8 +147,8 @@ class GoogleCloudStorage extends modMediaSource implements modMediaSourceInterfa
      * @param array $scopes
      * @return void
      */
-    public function setScopes(array $scopes) {
-        $this->scopes = $scopes;
+    public function setScopes($scopes) {
+        $this->scopes = (array) $scopes;
     }
 
     /**
