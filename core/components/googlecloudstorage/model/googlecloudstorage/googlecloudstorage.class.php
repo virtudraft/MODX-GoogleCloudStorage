@@ -32,7 +32,7 @@ require_once MODX_CORE_PATH . 'model/modx/sources/modmediasource.class.php';
 class GoogleCloudStorage extends modMediaSource implements modMediaSourceInterface {
 
     const VERSION = '1.0.0';
-    const RELEASE = 'beta1';
+    const RELEASE = 'beta2';
 
     /** @var Google_Client $client */
     public $client;
@@ -104,6 +104,10 @@ class GoogleCloudStorage extends modMediaSource implements modMediaSourceInterfa
      * @return Google_Service_Storage
      */
     public function getDriver() {
+        if (empty($this->scopes)) {
+            $this->xpdo->log(xPDO::LOG_LEVEL_ERROR, "\nMissing the scopes, given: " . print_r($this->scopes, 1), '', __METHOD__, __FILE__, __LINE__);
+            return false;
+        }
         if (empty($this->driver)) {
             try {
                 if (!file_exists(GCS_PRIMARY_KEY_FILE)) {

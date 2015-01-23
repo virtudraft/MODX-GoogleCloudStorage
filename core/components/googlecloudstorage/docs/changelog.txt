@@ -1,6 +1,6 @@
 Changelog for GoogleCloudStorage
 
-GoogleCloudStorage
+GoogleCloudStorage 1.0.0-beta2 (January 20, 2015)
 ====================================
 + type casting the scopes
 
