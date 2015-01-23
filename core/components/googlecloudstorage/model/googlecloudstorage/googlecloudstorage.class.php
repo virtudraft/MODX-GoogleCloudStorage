@@ -32,7 +32,7 @@ require_once MODX_CORE_PATH . 'model/modx/sources/modmediasource.class.php';
 class GoogleCloudStorage extends modMediaSource implements modMediaSourceInterface {
 
     const VERSION = '1.0.0';
-    const RELEASE = 'beta2';
+    const RELEASE = 'rc1';
 
     /** @var Google_Client $client */
     public $client;
@@ -73,7 +73,7 @@ class GoogleCloudStorage extends modMediaSource implements modMediaSourceInterfa
             $scopes = @explode(',', $this->xpdo->getOption('gcs.default_scopes', $properties, ''));
             define('GCS_DEFAULT_SCOPES', serialize($scopes));
         }
-        $this->setScopes($scopes);
+        $this->setScopes(unserialize(GCS_DEFAULT_SCOPES));
         require_once $this->xpdo->getOption('core_path', null, MODX_CORE_PATH) . 'components/googlecloudstorage/model/google/autoload.php';
         if (!$this->getDriver()) {
             $this->xpdo->log(xPDO::LOG_LEVEL_ERROR, "\nCould not initiate driver", '', __METHOD__, __FILE__, __LINE__);
@@ -131,6 +131,7 @@ class GoogleCloudStorage extends modMediaSource implements modMediaSourceInterfa
                 $_SESSION['service_token'] = $this->client->getAccessToken();
                 $this->driver = new Google_Service_Storage($this->client);
             } catch (Exception $ex) {
+                $this->xpdo->error->message = $ex->getMessage();
                 $this->xpdo->log(xPDO::LOG_LEVEL_ERROR, "\n" . $ex->getMessage() . "\n" . $ex->getTraceAsString(), '', __METHOD__, __FILE__, __LINE__);
             }
         }
@@ -174,6 +175,7 @@ class GoogleCloudStorage extends modMediaSource implements modMediaSourceInterfa
         try {
             $objects = $this->driver->objects->listObjects($this->bucket, $c);
         } catch (Exception $ex) {
+            $this->xpdo->error->message = $ex->getMessage();
             $this->xpdo->log(xPDO::LOG_LEVEL_ERROR, "\n" . $ex->getMessage() . "\n" . $ex->getTraceAsString(), '', __METHOD__, __FILE__, __LINE__);
             return array();
         }
@@ -760,7 +762,7 @@ class GoogleCloudStorage extends modMediaSource implements modMediaSourceInterfa
                 return false;
             }
         } catch (Exception $ex) {
-            
+            // leave this empty
         }
         try {
             $dir = dirname($oldPath);
@@ -1302,7 +1304,7 @@ class GoogleCloudStorage extends modMediaSource implements modMediaSourceInterfa
      * @param string $path
      * @return object Google_Service_Storage_ObjectAccessControl
      */
-    protected function setPublicAcl($path) {
+    public function setPublicAcl($path) {
         $acl = new Google_Service_Storage_ObjectAccessControl();
         $acl->setEntity('allUsers');
         $acl->setRole('READER');
@@ -1316,39 +1318,45 @@ class GoogleCloudStorage extends modMediaSource implements modMediaSourceInterfa
      * @param boolean $deleteSource should delete the source file?
      * @return mixed
      */
-    protected function uploadFile($filePath, $fileName, $deleteSource = true) {
-        $handle = fopen($filePath, "rb");
-        fseek($handle, 0);
-        $postBody = new Google_Service_Storage_StorageObject();
-        $postBody->setName($fileName);
-        $postBody->setUpdated(date("c"));
-        $postBody->setGeneration(time());
-        $size = @filesize($filePath);
-        $postBody->setSize($size);
-        $ext = @pathinfo($fileName, PATHINFO_EXTENSION);
-        $ext = strtolower($ext);
-        $mimeType = $this->getContentType($ext);
-        $postBody->setContentType($mimeType);
-        $chunkSizeBytes = 1 * 1024 * 1024;
-        $this->client->setDefer(true);
-        $request = $this->driver->objects->insert($this->bucket, $postBody, array(
-            'name' => $fileName,
-            'projection' => 'full',
-            'uploadType' => 'resumable',
-        ));
-        $media = new Google_Http_MediaFileUpload(
-                $this->client, $request, $mimeType, null, true, $chunkSizeBytes
-        );
-        $media->setFileSize($size);
+    public function uploadFile($filePath, $fileName, $deleteSource = true) {
         $status = false;
-        while (!$status && !feof($handle)) {
-            $chunk = fread($handle, $chunkSizeBytes);
-            $status = $media->nextChunk($chunk);
-        }
-        fclose($handle);
-        $this->client->setDefer(false);
-        if ($status && $deleteSource) {
-            unlink($filePath);
+        try {
+            $handle = fopen($filePath, "rb");
+            fseek($handle, 0);
+            $postBody = new Google_Service_Storage_StorageObject();
+            $postBody->setName($fileName);
+            $postBody->setUpdated(date("c"));
+            $postBody->setGeneration(time());
+            $size = @filesize($filePath);
+            $postBody->setSize($size);
+            $ext = @pathinfo($fileName, PATHINFO_EXTENSION);
+            $ext = strtolower($ext);
+            $mimeType = $this->getContentType($ext);
+            $postBody->setContentType($mimeType);
+            $chunkSizeBytes = 1 * 1024 * 1024;
+            $this->client->setDefer(true);
+            $request = $this->driver->objects->insert($this->bucket, $postBody, array(
+                'name' => $fileName,
+                'projection' => 'full',
+                'uploadType' => 'resumable',
+            ));
+            $media = new Google_Http_MediaFileUpload(
+                    $this->client, $request, $mimeType, null, true, $chunkSizeBytes
+            );
+            $media->setFileSize($size);
+            while (!$status && !feof($handle)) {
+                $chunk = fread($handle, $chunkSizeBytes);
+                $status = $media->nextChunk($chunk);
+            }
+            fclose($handle);
+            $this->client->setDefer(false);
+            if ($status && $deleteSource) {
+                unlink($filePath);
+            }
+        } catch (Exception $ex) {
+            $this->xpdo->error->message = $ex->getMessage();
+            $this->xpdo->log(xPDO::LOG_LEVEL_ERROR, __METHOD__ . ' : ' . $ex->getMessage() . "\n" . $ex->getTraceAsString());
+            return false;
         }
         return $status;
     }

@@ -1,5 +1,10 @@
 Changelog for GoogleCloudStorage
 
+GoogleCloudStorage 1.0.0-rc1 (January 23, 2015)
+====================================
+- publicize setPublicAcl() and uploadFile()
+- fix setScope() in initialize() to take CONSTANT value
+
 GoogleCloudStorage 1.0.0-beta2 (January 20, 2015)
 ====================================
 + type casting the scopes
