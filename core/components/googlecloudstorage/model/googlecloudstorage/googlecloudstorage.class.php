@@ -51,6 +51,7 @@ class GoogleCloudStorage extends modMediaSource implements modMediaSourceInterfa
         if (!$xpdo->lexicon) {
             $xpdo->getService('lexicon', 'modLexicon');
         }
+        $xpdo->lexicon->load('source');
         $xpdo->lexicon->load('googlecloudstorage:source');
         $this->set('is_stream', false);
     }
@@ -843,11 +844,11 @@ class GoogleCloudStorage extends modMediaSource implements modMediaSourceInterfa
                 }
             } catch (Exception $ex) {
                 $this->addError('path', $ex->getMessage());
-                $this->xpdo->log(xPDO::LOG_LEVEL_ERROR, __METHOD__ . ' : ' . $ex->getMessage() . "\n" . $ex->getTraceAsString());
+                $this->xpdo->log(xPDO::LOG_LEVEL_ERROR, "\n" . $ex->getMessage() . "\n" . $ex->getTraceAsString(), '', __METHOD__, __FILE__, __LINE__);
             }
             if (!$uploaded) {
                 $this->addError('path', $this->xpdo->lexicon('file_err_upload'));
-                $this->xpdo->log(xPDO::LOG_LEVEL_ERROR, __METHOD__ . ' : ' . $this->xpdo->lexicon('file_err_upload'));
+                $this->xpdo->log(xPDO::LOG_LEVEL_ERROR, "\n" . $this->xpdo->lexicon('file_err_upload'), '', __METHOD__, __FILE__, __LINE__);
             }
         }
 
@@ -1111,7 +1112,7 @@ class GoogleCloudStorage extends modMediaSource implements modMediaSourceInterfa
             }
         } catch (Exception $ex) {
             $this->xpdo->error->message = $ex->getMessage();
-            $this->xpdo->log(xPDO::LOG_LEVEL_ERROR, __METHOD__ . ' : ' . $ex->getMessage() . "\n" . $ex->getTraceAsString());
+            $this->xpdo->log(xPDO::LOG_LEVEL_ERROR, "\n" . $ex->getMessage() . "\n" . $ex->getTraceAsString(), '', __METHOD__, __FILE__, __LINE__);
             return $success;
         }
 
@@ -1250,7 +1251,7 @@ class GoogleCloudStorage extends modMediaSource implements modMediaSourceInterfa
             return $this->driver->objects->get($this->bucket, $filename)->getSize();
         } catch (Exception $ex) {
             $this->xpdo->error->message = $ex->getMessage();
-            $this->xpdo->log(xPDO::LOG_LEVEL_ERROR, __METHOD__ . ' : ' . $ex->getMessage() . "\n" . $ex->getTraceAsString());
+            $this->xpdo->log(xPDO::LOG_LEVEL_ERROR, "\n" . $ex->getMessage() . "\n" . $ex->getTraceAsString(), '', __METHOD__, __FILE__, __LINE__);
             return 0;
         }
     }
@@ -1355,7 +1356,7 @@ class GoogleCloudStorage extends modMediaSource implements modMediaSourceInterfa
             }
         } catch (Exception $ex) {
             $this->xpdo->error->message = $ex->getMessage();
-            $this->xpdo->log(xPDO::LOG_LEVEL_ERROR, __METHOD__ . ' : ' . $ex->getMessage() . "\n" . $ex->getTraceAsString());
+            $this->xpdo->log(xPDO::LOG_LEVEL_ERROR, "\n" . $ex->getMessage() . "\n" . $ex->getTraceAsString(), '', __METHOD__, __FILE__, __LINE__);
             return false;
         }
         return $status;
